@@ -506,10 +506,16 @@ describe('', function() {
 
     it('saves a new session when the server receives a request', function(done) {
       requestWithSession('http://127.0.0.1:4569/', function(err, res, body) {
-        if (err) { return done(err); }
+        if (err) {
+          console.error(err);
+          return done(err);
+        }
         var queryString = 'SELECT * FROM sessions';
         db.query(queryString, function(error, sessions) {
-          if (error) { return done(error); }
+          if (error) {
+            console.error(error);
+            return done(error);
+          }
           expect(sessions.length).to.equal(1);
           expect(sessions[0].userId).to.be.null;
           done();

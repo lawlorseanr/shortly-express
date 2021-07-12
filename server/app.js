@@ -4,6 +4,7 @@ const utils = require('./lib/hashUtils');
 const partials = require('express-partials');
 const bodyParser = require('body-parser');
 const Auth = require('./middleware/auth');
+const CookieParser = require('./middleware/cookieParser');
 const models = require('./models');
 
 const app = express();
@@ -13,7 +14,11 @@ app.set('view engine', 'ejs');
 app.use(partials());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+app.use(Auth.createSession);
+
 app.use(express.static(path.join(__dirname, '../public')));
+
 
 app.get('/',
   (req, res) => {
@@ -97,7 +102,7 @@ app.post('/signup', (req, res) => {
           .then( result => {
             if (result) {
               // created user, redirect to index
-              res.redirect('/');
+              res.status(200).redirect('/');
             }
             // user creation failed, stay in signup
             throw 'User creation failed.';

@@ -10,6 +10,7 @@ module.exports.createSession = (req, res, next) => {
       .then(response => models.Sessions.get({ id: response.insertId }))
       .then(session => {
         req.session = session;
+        res.cookies = {};
         res.cookies['shortlyid'] = {value: session.hash};
       })
       .catch(err => console.error(err))

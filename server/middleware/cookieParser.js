@@ -1,4 +1,4 @@
-const parseCookies = (req, res, next) => {
+const parseCookies = (req, res, next = () => {}) => {
   if (req.headers.cookie) {
     var parameters = req.headers.cookie.split('; ');
     parameters.forEach( parameter => {
