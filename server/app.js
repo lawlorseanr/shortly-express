@@ -84,35 +84,65 @@ app.get('/login', (req, res) => {
 });
 
 app.post('/signup', (req, res) => {
-  models.Users.create(req.body)
-    .then(data => {
-      res.status(200);
-      res.redirect('/');
+  var body = req.body;
+  var userdb = models.Users.get({username: body.username})
+    .then( result => {
+      if (result) {
+        // user exists, redirect to login page
+        res.redirect('/signup');
+      } else {
+        return models.Users.create(
+          {username: body.username, password: body.password}
+        )
+          .then( result => {
+            if (result) {
+              // created user, redirect to index
+              res.redirect('/');
+            }
+            // user creation failed, stay in signup
+            throw 'User creation failed.';
+          })
+          .catch( err => {
+            throw err;
+          });
+      }
     })
-    .catch(err => {
-      res.status(400);
-      console.log(err);
+    .catch( err => {
+      console.error(err);
       res.redirect('/signup');
     });
 });
 
 app.post('/login', (req, res) => {
-  models.Users.get({ username: req.body.username })
-    .then((result) => {
-      console.log('RESULT:', result);
-      return models.Users.compare(req.body.password, result.password, result.salt);
-    })
-    .then((bool) => {
-      if (bool) {
-        console.log('Valid username and password');
-        res.status(200).redirect('/');
+  var body = req.body;
+  var userdb = models.Users.get({username: body.username})
+    .then( result => {
+      // if specified username exists, in db, compare
+      if (result) {
+
+        // return boolean promise for valid credentials
+        return models.Users.compare(
+          body.password,
+          result.password,
+          result.salt
+        );
+
+      // if user doresn't exist, stay on login page
       } else {
-        throw 'Invalid username or password';
+        throw 'Inavlid login credentials (user does not exist).';
       }
     })
-    .catch(err => {
+    .then( result => {
+      // if credentials passed, redirect to index
+      if (result) {
+        res.redirect('/');
+      }
+      // if credentials failed, stay on login
+      throw 'Invalid login credentials (user exists).';
+    })
+    .catch( err => {
       console.error(err);
-      res.status(400).redirect('/login');
+      res.redirect('/login');
     });
 });
 
