@@ -92,13 +92,19 @@ app.post('/signup',
     var userdb = models.Users.get({username: body.username})
       .then( result => {
         if (result) {
+          // user exists, redirect to login page
           res.redirect('/login');
         } else {
           return models.Users.create(
             {username: body.username, password: body.password}
           )
             .then( result => {
-              res.redirect('/');
+              if (result) {
+                // created user, redirect to index
+                res.redirect('/');
+              }
+              // user creation failed, stay in signup
+              throw 'User creation failed.';
             })
             .catch( err => {
               throw err;
@@ -107,7 +113,7 @@ app.post('/signup',
       })
       .catch( err => {
         console.error(err);
-        res.status(400).send(err);
+        res.redirect('/signup');
       });
   });
 
@@ -116,24 +122,32 @@ app.post('/login',
     var body = req.body;
     var userdb = models.Users.get({username: body.username})
       .then( result => {
+        // if specified username exists, in db, compare
         if (result) {
+
+          // return boolean promise for valid credentials
           return models.Users.compare(
             body.password,
             result.password,
             result.salt
           );
+
+        // if user doresn't exist, stay on login page
         } else {
-          res.redirect('/login');
+          throw 'Inavlid login credentials (user does not exist).';
         }
       })
       .then( result => {
+        // if credentials passed, redirect to index
         if (result) {
           res.redirect('/');
         }
-        res.redirect('/login');
+        // if credentials failed, stay on login
+        throw 'Invalid login credentials (user exists).';
       })
       .catch( err => {
-
+        console.error(err);
+        res.redirect('/login');
       });
   });
 
