@@ -9,14 +9,18 @@ module.exports.createSession = (req, res, next) => {
         models.Sessions.get({id: result.insertId})
           .then( session => {
             req.session = session;
-            next();
           })
           .catch( err => {
             throw err;
+          })
+          .finally( () => {
+            next();
           });
       })
       .catch( err => {
         console.error(err);
+      })
+      .finally( () => {
         next();
       });
   }
