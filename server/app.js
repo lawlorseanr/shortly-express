@@ -14,36 +14,32 @@ app.set('view engine', 'ejs');
 app.use(partials());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-
-
 app.use(Auth.createSession);
 app.use(cookieParser);
 
 app.use(express.static(path.join(__dirname, '../public')));
 
+/************************************************************/
+// Basic routing
+/************************************************************/
 
-
-app.get('/', (req, res) => {
-  if (req.cookies === undefined) {
-    res.redirect('/login');
-  } else {
-    res.render('index');
-  }
-});
-
-
-app.get('/create', (req, res) => {
+app.get('/', Auth.verifySession, (req, res) => {
   res.render('index');
 });
 
-app.get('/links', (req, res, next) => {
+app.get('/create', Auth.verifySession, (req, res) => {
+  res.render('index');
+});
+
+app.get('/links', Auth.verifySession, (req, res, next) => {
   models.Links.getAll()
     .then(links => {
       res.status(200).send(links);
     })
     .error(error => {
       res.status(500).send(error);
-    });
+    })
+    .finally(() => next());
 });
 
 app.post('/links', (req, res, next) => {
