@@ -4,6 +4,7 @@ const utils = require('./lib/hashUtils');
 const partials = require('express-partials');
 const bodyParser = require('body-parser');
 const Auth = require('./middleware/auth');
+const cookieParser = require('./middleware/cookieParser');
 const models = require('./models');
 
 const app = express();
@@ -15,31 +16,32 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
 
+app.use(cookieParser);
+app.use(Auth.createSession);
+/************************************************************/
+// Basic routing
+/************************************************************/
 
-
-app.get('/', 
-(req, res) => {
+app.get('/', Auth.verifySession, (req, res) => {
   res.render('index');
 });
 
-app.get('/create', 
-(req, res) => {
+app.get('/create', Auth.verifySession, (req, res) => {
   res.render('index');
 });
 
-app.get('/links', 
-(req, res, next) => {
+app.get('/links', Auth.verifySession, (req, res, next) => {
   models.Links.getAll()
     .then(links => {
       res.status(200).send(links);
     })
     .error(error => {
       res.status(500).send(error);
-    });
+    })
+    .finally(() => next());
 });
 
-app.post('/links', 
-(req, res, next) => {
+app.post('/links', (req, res, next) => {
   var url = req.body.url;
   if (!models.Links.isValidUrl(url)) {
     // send back a 404 if link is not valid
@@ -77,8 +79,85 @@ app.post('/links',
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
+app.get('/signup', (req, res) => {
+  res.render('signup');
+});
 
+app.get('/login', (req, res) => {
+  res.render('login');
+});
 
+app.post('/signup', (req, res) => {
+  var body = req.body;
+  var userdb = models.Users.get({username: body.username})
+    .then(userInfo => {
+      if (userInfo) {
+        // user exists, redirect to login page
+        throw 'Username is not available.';
+      }
+      return models.Users.create({username: body.username, password: body.password});
+    })
+    .then(createUserResult => {
+      // created user, redirect to index
+      return models.Sessions.update(
+        {hash: res.cookies.shortlyid.value},
+        {userId: createUserResult.insertId}
+      );
+    })
+    .then(() => {
+      res.redirect('/');
+    })
+    .catch(err => {
+      // console.error(err);
+      res.redirect('/signup');
+    });
+});
+
+app.post('/login', (req, res) => {
+  var body = req.body;
+  var userdb = models.Users.get({username: body.username})
+    .then( result => {
+      // if specified username exists, in db, compare
+      if (result) {
+        // return boolean promise for valid credentials
+        return [models.Users.compare(
+          body.password,
+          result.password,
+          result.salt
+        ), result];
+
+      // if user doresn't exist, stay on login page
+      } else {
+        throw 'Invalid login credentials (user does not exist).';
+      }
+    })
+    .then( array => {
+      // if credentials passed, redirect to index
+      let [userExists, userInfo] = array;
+
+      if (userExists) {
+        return res.redirect('/');
+      }
+      // if credentials failed, stay on login
+      throw 'Invalid login credentials (user exists).';
+    })
+    .catch( err => {
+      console.error(err);
+      res.redirect('/login');
+    });
+});
+
+app.get('/logout', (req, res) => {
+  models.Sessions.delete({ hash: req.cookies.shortlyid })
+    .then(() => {
+      res.cookie('shortlyid', '');
+      res.redirect('/login');
+    })
+    .catch(err => {
+      console.error(err);
+      res.redirect('/');
+    });
+});
 
 /************************************************************/
 // Handle the code parameter route last - if all other routes fail

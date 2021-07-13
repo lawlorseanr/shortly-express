@@ -5,7 +5,7 @@ var httpMocks = require('node-mocks-http');
 
 var app = require('../server/app.js');
 var schema = require('../server/db/config.js');
-var port = 4568;
+var port = 4569;
 
 /************************************************************/
 // Mocha doesn't have a way to designate pending before blocks.
@@ -39,8 +39,8 @@ describe('', function() {
     /* TODO: Update user and password if different than on your local machine            */
     /*************************************************************************************/
     db = mysql.createConnection({
-      user: 'student',
-      password: 'student',
+      user: 'root',
+      password: '',
       database: 'shortly'
     });
 
@@ -123,12 +123,12 @@ describe('', function() {
     });
   });
 
-  xdescribe('Account Creation:', function() {
+  describe('Account Creation:', function() {
 
     it('signup creates a new user record', function(done) {
       var options = {
         'method': 'POST',
-        'uri': 'http://127.0.0.1:4568/signup',
+        'uri': 'http://127.0.0.1:4569/signup',
         'json': {
           'username': 'Samantha',
           'password': 'Samantha'
@@ -150,7 +150,7 @@ describe('', function() {
     it('does not store the user\'s original text password', function(done) {
       var options = {
         'method': 'POST',
-        'uri': 'http://127.0.0.1:4568/signup',
+        'uri': 'http://127.0.0.1:4569/signup',
         'json': {
           'username': 'Samantha',
           'password': 'Samantha'
@@ -173,7 +173,7 @@ describe('', function() {
     it('redirects to signup if the user already exists', function(done) {
       var options = {
         'method': 'POST',
-        'uri': 'http://127.0.0.1:4568/signup',
+        'uri': 'http://127.0.0.1:4569/signup',
         'json': {
           'username': 'Samantha',
           'password': 'Samantha'
@@ -193,7 +193,7 @@ describe('', function() {
     it('redirects to index after user is created', function(done) {
       var options = {
         'method': 'POST',
-        'uri': 'http://127.0.0.1:4568/signup',
+        'uri': 'http://127.0.0.1:4569/signup',
         'json': {
           'username': 'Samantha',
           'password': 'Samantha'
@@ -208,12 +208,12 @@ describe('', function() {
     });
   });
 
-  xdescribe('Account Login:', function() {
+  describe('Account Login:', function() {
 
     beforeEach(function(done) {
       var options = {
         'method': 'POST',
-        'uri': 'http://127.0.0.1:4568/signup',
+        'uri': 'http://127.0.0.1:4569/signup',
         'json': {
           'username': 'Samantha',
           'password': 'Samantha'
@@ -228,7 +228,7 @@ describe('', function() {
     it('Logs in existing users', function(done) {
       var options = {
         'method': 'POST',
-        'uri': 'http://127.0.0.1:4568/login',
+        'uri': 'http://127.0.0.1:4569/login',
         'json': {
           'username': 'Samantha',
           'password': 'Samantha'
@@ -245,7 +245,7 @@ describe('', function() {
     it('Users that do not exist are kept on login page', function(done) {
       var options = {
         'method': 'POST',
-        'uri': 'http://127.0.0.1:4568/login',
+        'uri': 'http://127.0.0.1:4569/login',
         'json': {
           'username': 'Fred',
           'password': 'Fred'
@@ -262,7 +262,7 @@ describe('', function() {
     it('Users that enter an incorrect password are kept on login page', function(done) {
       var options = {
         'method': 'POST',
-        'uri': 'http://127.0.0.1:4568/login',
+        'uri': 'http://127.0.0.1:4569/login',
         'json': {
           'username': 'Samantha',
           'password': 'Alexander'
@@ -277,7 +277,7 @@ describe('', function() {
     });
   });
 
-  xdescribe('Sessions Schema:', function() {
+  describe('Sessions Schema:', function() {
     it('contains a sessions table', function(done) {
       var queryString = 'SELECT * FROM sessions';
       db.query(queryString, function(err, results) {
@@ -325,7 +325,7 @@ describe('', function() {
     });
   });
 
-  xdescribe('Express Middleware', function() {
+  describe('Express Middleware', function() {
     var cookieParser = require('../server/middleware/cookieParser.js');
     var createSession = require('../server/middleware/auth.js').createSession;
 
@@ -480,7 +480,7 @@ describe('', function() {
     });
   });
 
-  xdescribe('Sessions and cookies', function() {
+  describe('Sessions and cookies', function() {
     var requestWithSession;
     var cookieJar;
 
@@ -488,7 +488,7 @@ describe('', function() {
 
       var options = {
         'method': 'POST',
-        'uri': 'http://127.0.0.1:4568/signup',
+        'uri': 'http://127.0.0.1:4569/signup',
         'json': {
           'username': 'Vivian',
           'password': 'Vivian'
@@ -505,11 +505,17 @@ describe('', function() {
     });
 
     it('saves a new session when the server receives a request', function(done) {
-      requestWithSession('http://127.0.0.1:4568/', function(err, res, body) {
-        if (err) { return done(err); }
+      requestWithSession('http://127.0.0.1:4569/', function(err, res, body) {
+        if (err) {
+          console.error(err);
+          return done(err);
+        }
         var queryString = 'SELECT * FROM sessions';
         db.query(queryString, function(error, sessions) {
-          if (error) { return done(error); }
+          if (error) {
+            console.error(error);
+            return done(error);
+          }
           expect(sessions.length).to.equal(1);
           expect(sessions[0].userId).to.be.null;
           done();
@@ -518,9 +524,9 @@ describe('', function() {
     });
 
     it('sets and stores a cookie on the client', function(done) {
-      requestWithSession('http://127.0.0.1:4568/', function(error, res, body) {
+      requestWithSession('http://127.0.0.1:4569/', function(error, res, body) {
         if (error) { return done(error); }
-        var cookies = cookieJar.getCookies('http://127.0.0.1:4568/');
+        var cookies = cookieJar.getCookies('http://127.0.0.1:4569/');
         expect(cookies.length).to.equal(1);
         done();
       });
@@ -529,8 +535,9 @@ describe('', function() {
     it('assigns session to a user when user logs in', function(done) {
       addUser(function(err, res, body) {
         if (err) { return done(err); }
-        var cookies = cookieJar.getCookies('http://127.0.0.1:4568/');
+        var cookies = cookieJar.getCookies('http://127.0.0.1:4569/');
         var cookieValue = cookies[0].value;
+        // var cookieValue = JSON.parse(cookies[0].value).shortlyid.value;
 
         var queryString = `
           SELECT users.username FROM users, sessions
@@ -549,13 +556,13 @@ describe('', function() {
     it('destroys session and cookie when logs out', function(done) {
       addUser(function(err, res, body) {
         if (err) { return done(err); }
-        var cookies = cookieJar.getCookies('http://127.0.0.1:4568/');
+        var cookies = cookieJar.getCookies('http://127.0.0.1:4569/');
         var cookieValue = cookies[0].value;
 
-        requestWithSession('http://127.0.0.1:4568/logout', function(error, response, resBody) {
+        requestWithSession('http://127.0.0.1:4569/logout', function(error, response, resBody) {
           if (error) { return done(error); }
 
-          var cookies = cookieJar.getCookies('http://127.0.0.1:4568/');
+          var cookies = cookieJar.getCookies('http://127.0.0.1:4569/');
           var newCookieValue = cookies[0].value;
           expect(cookieValue).to.not.equal(newCookieValue);
 
@@ -570,10 +577,10 @@ describe('', function() {
     });
   });
 
-  xdescribe('Privileged Access:', function() {
+  describe('Privileged Access:', function() {
 
     it('Redirects to login page if a user tries to access the main page and is not signed in', function(done) {
-      request('http://127.0.0.1:4568/', function(error, res, body) {
+      request('http://127.0.0.1:4569/', function(error, res, body) {
         if (error) { return done(error); }
         expect(res.req.path).to.equal('/login');
         done();
@@ -581,7 +588,7 @@ describe('', function() {
     });
 
     it('Redirects to login page if a user tries to access the create page and is not signed in', function(done) {
-      request('http://127.0.0.1:4568/create', function(error, res, body) {
+      request('http://127.0.0.1:4569/create', function(error, res, body) {
         if (error) { return done(error); }
         expect(res.req.path).to.equal('/login');
         done();
@@ -589,7 +596,7 @@ describe('', function() {
     });
 
     it('Redirects to login page if a user tries to see all of the links and is not signed in', function(done) {
-      request('http://127.0.0.1:4568/links', function(error, res, body) {
+      request('http://127.0.0.1:4569/links', function(error, res, body) {
         if (error) { return done(error); }
         expect(res.req.path).to.equal('/login');
         done();
@@ -597,24 +604,24 @@ describe('', function() {
     });
   });
 
-  xdescribe('Link creation:', function() {
+  describe('Link creation:', function() {
 
     var cookies = request.jar();
     var requestWithSession = request.defaults({ jar: cookies });
     var options = {
       'method': 'POST',
       'followAllRedirects': true,
-      'uri': 'http://127.0.0.1:4568/links',
+      'uri': 'http://127.0.0.1:4569/links',
       'json': {
         'url': 'http://www.google.com/'
       }
     };
 
-    xbeforeEach(function(done) {
+    beforeEach(function(done) {
       var options = {
         'method': 'POST',
         'followAllRedirects': true,
-        'uri': 'http://127.0.0.1:4568/signup',
+        'uri': 'http://127.0.0.1:4569/signup',
         'json': {
           'username': 'Vivian',
           'password': 'Vivian'
@@ -624,7 +631,7 @@ describe('', function() {
     });
 
     afterEach(function(done) {
-      requestWithSession('http://127.0.0.1:4568/logout', done);
+      requestWithSession('http://127.0.0.1:4569/logout', done);
     });
 
     describe('Creating new links:', function(done) {
@@ -632,7 +639,7 @@ describe('', function() {
       it('Only shortens valid urls, returning a 404 - Not found for invalid urls', function(done) {
         var options = {
           'method': 'POST',
-          'uri': 'http://127.0.0.1:4568/links',
+          'uri': 'http://127.0.0.1:4569/links',
           'json': {
             'url': 'definitely not a valid url'
           }
@@ -695,7 +702,7 @@ describe('', function() {
         link = {
           url: 'http://www.google.com/',
           title: 'Google',
-          baseUrl: 'http://127.0.0.1:4568',
+          baseUrl: 'http://127.0.0.1:4569',
           code: '2387f'
         };
         db.query('INSERT INTO links SET ?', link, done);
@@ -705,7 +712,7 @@ describe('', function() {
         var options = {
           'method': 'POST',
           'followAllRedirects': true,
-          'uri': 'http://127.0.0.1:4568/links',
+          'uri': 'http://127.0.0.1:4569/links',
           'json': {
             'url': 'http://www.google.com/'
           }
@@ -722,7 +729,7 @@ describe('', function() {
       it('Shortcode redirects to correct url', function(done) {
         var options = {
           'method': 'GET',
-          'uri': 'http://127.0.0.1:4568/' + link.code
+          'uri': 'http://127.0.0.1:4569/' + link.code
         };
 
         requestWithSession(options, function(error, res, body) {
@@ -736,13 +743,13 @@ describe('', function() {
       it('Shortcode redirects to index if shortcode does not exist', function(done) {
         var options = {
           'method': 'GET',
-          'uri': 'http://127.0.0.1:4568/doesNotExist'
+          'uri': 'http://127.0.0.1:4569/doesNotExist'
         };
 
         requestWithSession(options, function(error, res, body) {
           if (error) { return done(error); }
           var currentLocation = res.request.href;
-          expect(currentLocation).to.equal('http://127.0.0.1:4568/');
+          expect(currentLocation).to.equal('http://127.0.0.1:4569/');
           done();
         });
       });
@@ -750,7 +757,7 @@ describe('', function() {
       it('Returns all of the links to display on the links page', function(done) {
         var options = {
           'method': 'GET',
-          'uri': 'http://127.0.0.1:4568/links'
+          'uri': 'http://127.0.0.1:4569/links'
         };
 
         requestWithSession(options, function(error, res, body) {
