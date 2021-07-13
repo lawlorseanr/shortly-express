@@ -553,7 +553,6 @@ describe('', function() {
       });
     });
 
-    console.log('!================ current test ====================');
     it('destroys session and cookie when logs out', function(done) {
       addUser(function(err, res, body) {
         if (err) { return done(err); }
@@ -578,7 +577,8 @@ describe('', function() {
     });
   });
 
-  xdescribe('Privileged Access:', function() {
+  console.log('!================ current test ====================');
+  describe('Privileged Access:', function() {
 
     it('Redirects to login page if a user tries to access the main page and is not signed in', function(done) {
       request('http://127.0.0.1:4569/', function(error, res, body) {
