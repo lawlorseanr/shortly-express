@@ -151,7 +151,7 @@ app.get('/logout', (req, res) => {
   models.Sessions.delete({ hash: req.cookies.shortlyid })
     .then(() => {
       res.cookie('shortlyid', '');
-      res.render('login');
+      res.redirect('/login');
     })
     .catch(err => {
       console.error(err);
