@@ -12,7 +12,7 @@ module.exports.createSession = (req, res, next) => {
         req.session = session;
         res.cookies = {};
         res.cookies['shortlyid'] = {value: session.hash};
-        res.setHeader('Set-Cookie', `shortlyid=${session.hash}`);
+        res.setHeader('set-cookie', `shortlyid=${session.hash}`);
       })
       .catch(err => console.error(err))
       .finally( () => next());
@@ -30,10 +30,10 @@ module.exports.createSession = (req, res, next) => {
               req.session = session;
               res.cookies = {};
               res.cookies['shortlyid'] = {value: session.hash};
-              res.setHeader('Set-Cookie', `shortlyid=${session.hash}`);
+              res.setHeader('set-cookie', `shortlyid=${session.hash}`);
             })
             .catch(err => console.error(err))
-            .finally( () => next());
+            .finally(() => next());
         }
 
       })

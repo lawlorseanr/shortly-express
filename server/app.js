@@ -97,33 +97,19 @@ app.post('/signup', (req, res) => {
     .then(userInfo => {
       if (userInfo) {
         // user exists, redirect to login page
-        return res.redirect('/signup');
+        throw 'Username is not available.';
       }
-      models.Users.create({username: body.username, password: body.password})
-        .then( createUserResult => {
-          if (createUserResult.affectedRows === 1) {
-            // created user, redirect to index
-            models.Sessions.update(
-              {hash: res.cookies.shortlyid.value},
-              {userId: createUserResult.insertId}
-            )
-              .then( updateSessionResult => {
-                if (updateSessionResult) {
-                  return res.status(200).redirect('/');
-                }
-                throw 'Unable to update session';
-              })
-              .catch( err => {
-                throw err;
-              });
-          } else {
-            // user creation failed, stay in signup
-            throw 'User creation failed.';
-          }
-        })
-        .catch( err => {
-          throw err;
-        });
+      return models.Users.create({username: body.username, password: body.password});
+    })
+    .then( createUserResult => {
+      // created user, redirect to index
+      return models.Sessions.update(
+        {hash: res.cookies.shortlyid.value},
+        {userId: createUserResult.insertId}
+      );
+    })
+    .then(() => {
+      res.status(200).redirect('/');
     })
     .catch( err => {
       console.error(err);
