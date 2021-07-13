@@ -537,6 +537,7 @@ describe('', function() {
         if (err) { return done(err); }
         var cookies = cookieJar.getCookies('http://127.0.0.1:4569/');
         var cookieValue = cookies[0].value;
+        // var cookieValue = JSON.parse(cookies[0].value).shortlyid.value;
 
         var queryString = `
           SELECT users.username FROM users, sessions
@@ -552,6 +553,7 @@ describe('', function() {
       });
     });
 
+    console.log('!================ current test ====================');
     it('destroys session and cookie when logs out', function(done) {
       addUser(function(err, res, body) {
         if (err) { return done(err); }

@@ -4,7 +4,7 @@ const utils = require('./lib/hashUtils');
 const partials = require('express-partials');
 const bodyParser = require('body-parser');
 const Auth = require('./middleware/auth');
-const CookieParser = require('./middleware/cookieParser');
+const cookieParser = require('./middleware/cookieParser');
 const models = require('./models');
 
 const app = express();
@@ -15,9 +15,12 @@ app.use(partials());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+
 app.use(Auth.createSession);
+app.use(cookieParser);
 
 app.use(express.static(path.join(__dirname, '../public')));
+
 
 
 app.get('/',
@@ -91,26 +94,36 @@ app.get('/login', (req, res) => {
 app.post('/signup', (req, res) => {
   var body = req.body;
   var userdb = models.Users.get({username: body.username})
-    .then( result => {
-      if (result) {
+    .then(userInfo => {
+      if (userInfo) {
         // user exists, redirect to login page
-        res.redirect('/signup');
-      } else {
-        return models.Users.create(
-          {username: body.username, password: body.password}
-        )
-          .then( result => {
-            if (result) {
-              // created user, redirect to index
-              res.status(200).redirect('/');
-            }
+        return res.redirect('/signup');
+      }
+      models.Users.create({username: body.username, password: body.password})
+        .then( createUserResult => {
+          if (createUserResult.affectedRows === 1) {
+            // created user, redirect to index
+            models.Sessions.update(
+              {hash: res.cookies.shortlyid.value},
+              {userId: createUserResult.insertId}
+            )
+              .then( updateSessionResult => {
+                if (updateSessionResult) {
+                  return res.status(200).redirect('/');
+                }
+                throw 'Unable to update session';
+              })
+              .catch( err => {
+                throw err;
+              });
+          } else {
             // user creation failed, stay in signup
             throw 'User creation failed.';
-          })
-          .catch( err => {
-            throw err;
-          });
-      }
+          }
+        })
+        .catch( err => {
+          throw err;
+        });
     })
     .catch( err => {
       console.error(err);
@@ -124,23 +137,24 @@ app.post('/login', (req, res) => {
     .then( result => {
       // if specified username exists, in db, compare
       if (result) {
-
         // return boolean promise for valid credentials
-        return models.Users.compare(
+        return [models.Users.compare(
           body.password,
           result.password,
           result.salt
-        );
+        ), result];
 
       // if user doresn't exist, stay on login page
       } else {
-        throw 'Inavlid login credentials (user does not exist).';
+        throw 'Invalid login credentials (user does not exist).';
       }
     })
-    .then( result => {
+    .then( array => {
       // if credentials passed, redirect to index
-      if (result) {
-        res.redirect('/');
+      let [userExists, userInfo] = array;
+
+      if (userExists) {
+        return res.redirect('/');
       }
       // if credentials failed, stay on login
       throw 'Invalid login credentials (user exists).';
@@ -148,6 +162,16 @@ app.post('/login', (req, res) => {
     .catch( err => {
       console.error(err);
       res.redirect('/login');
+    });
+});
+
+app.get('/logout', (req, res) => {
+  res.cookies = {};
+  models.Sessions.delete({ hash: req.cookies.shortlyid })
+    .then(() => res.redirect('/login'))
+    .catch(err => {
+      console.error(err);
+      res.redirect('/');
     });
 });
 
