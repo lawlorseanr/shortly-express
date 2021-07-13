@@ -28,14 +28,13 @@ module.exports.createSession = (req, res, next) => {
               req.session = session;
               res.cookies = {};
               res.cookies['shortlyid'] = {value: session.hash};
-              // res.setHeader('Set-Cookie', `shortlyid=${session.hash}`);
               res.cookie('shortlyid', session.hash);
             })
             .catch(err => { throw err; })
             .finally(() => next());
         }
       })
-      // .catch (err => console.error(err))
+      .catch (err => console.error(err))
       .finally(() => next());
   }
 };
@@ -45,7 +44,7 @@ module.exports.createSession = (req, res, next) => {
 /************************************************************/
 
 module.exports.verifySession = (req, res, next) => {
-  if (req.session.userId !== null) {
+  if (req.session === undefined || req.session.userId !== null) {
     return next();
   }
   res.redirect('/login');
