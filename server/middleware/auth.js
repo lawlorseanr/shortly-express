@@ -3,9 +3,7 @@ const Promise = require('bluebird');
 const hashUtils = require('../lib/hashUtils');
 
 module.exports.createSession = (req, res, next) => {
-
   if (req.cookies === undefined || Object.keys(req.cookies).length === 0) {
-
     models.Sessions.create()
       .then(response => models.Sessions.get({ id: response.insertId }))
       .then(session => {
@@ -30,14 +28,14 @@ module.exports.createSession = (req, res, next) => {
               req.session = session;
               res.cookies = {};
               res.cookies['shortlyid'] = {value: session.hash};
-              res.setHeader('set-cookie', `shortlyid=${session.hash}`);
+              // res.setHeader('Set-Cookie', `shortlyid=${session.hash}`);
+              res.cookie('shortlyid', session.hash);
             })
-            .catch(err => console.error(err))
+            .catch(err => { throw err; })
             .finally(() => next());
         }
-
       })
-      .catch (err => console.error(err))
+      // .catch (err => console.error(err))
       .finally(() => next());
   }
 };

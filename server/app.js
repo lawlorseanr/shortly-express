@@ -14,11 +14,10 @@ app.set('view engine', 'ejs');
 app.use(partials());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(Auth.createSession);
-app.use(cookieParser);
-
 app.use(express.static(path.join(__dirname, '../public')));
 
+app.use(cookieParser);
+app.use(Auth.createSession);
 /************************************************************/
 // Basic routing
 /************************************************************/
@@ -98,7 +97,7 @@ app.post('/signup', (req, res) => {
       }
       return models.Users.create({username: body.username, password: body.password});
     })
-    .then( createUserResult => {
+    .then(createUserResult => {
       // created user, redirect to index
       return models.Sessions.update(
         {hash: res.cookies.shortlyid.value},
@@ -106,10 +105,10 @@ app.post('/signup', (req, res) => {
       );
     })
     .then(() => {
-      res.status(200).redirect('/');
+      res.redirect('/');
     })
-    .catch( err => {
-      console.error(err);
+    .catch(err => {
+      // console.error(err);
       res.redirect('/signup');
     });
 });
@@ -149,9 +148,11 @@ app.post('/login', (req, res) => {
 });
 
 app.get('/logout', (req, res) => {
-  res.cookies = {};
   models.Sessions.delete({ hash: req.cookies.shortlyid })
-    .then(() => res.redirect('/login'))
+    .then(() => {
+      res.cookie('shortlyid', '');
+      res.render('login');
+    })
     .catch(err => {
       console.error(err);
       res.redirect('/');
